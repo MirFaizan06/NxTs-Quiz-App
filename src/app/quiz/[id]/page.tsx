@@ -62,6 +62,8 @@ export default function Play({ params }: { params: Promise<{ id: string }> }) {
   const [removed, setRemoved] = useState(false);
   const [burst, setBurst] = useState(0);
   const [finale, setFinale] = useState(0);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [tabAway, setTabAway] = useState(false);
   const finishedOnce = useRef(false);
   const { players, meId } = usePlayers(id);
 
@@ -85,6 +87,50 @@ export default function Play({ params }: { params: Promise<{ id: string }> }) {
       ? remainingQuestionSeconds(j.question.time_limit, j.quiz.question_started_at)
       : 0);
   }
+
+  useEffect(() => {
+    if (!id) return;
+    const reconnect = async () => {
+      setReconnecting(true);
+      try {
+        await fetch('/api/quizzes/' + id + '/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventType: 'reconnect', metadata: { online: navigator.onLine } }) });
+        await load();
+      } finally { setReconnecting(false); }
+    };
+    const online = () => void reconnect();
+    const visible = () => { if (document.visibilityState === 'visible') void reconnect(); };
+    window.addEventListener('online', online);
+    document.addEventListener('visibilitychange', visible);
+    return () => { window.removeEventListener('online', online); document.removeEventListener('visibilitychange', visible); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const onVisibility = () => {
+      const hidden = document.visibilityState === 'hidden';
+      setTabAway(hidden);
+      void fetch('/api/quizzes/' + id + '/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventType: hidden ? 'tab_hidden' : 'tab_visible', metadata: { visibility: document.visibilityState } }) });
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || !q) return;
+    const key = `nxt-quiz:${id}:${q.id}`;
+    if (submitted) localStorage.removeItem(key);
+    else if (selected.length) localStorage.setItem(key, JSON.stringify(selected));
+    else {
+      try { const saved = JSON.parse(localStorage.getItem(key) || 'null'); if (Array.isArray(saved)) setSelected(saved); } catch {}
+    }
+  }, [id, q?.id, submitted, selected.length]);
+
+  useEffect(() => {
+    if (!id) return;
+    const heartbeat = window.setInterval(() => { void fetch('/api/quizzes/' + id + '/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventType: 'heartbeat' }) }); }, 30000);
+    return () => window.clearInterval(heartbeat);
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -169,6 +215,8 @@ export default function Play({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <div className="container page">
+      {reconnecting && <div className="pill lobby" style={{marginBottom:12}}>Reconnecting and restoring your round…</div>}
+      {tabAway && quiz?.status === 'live' && <div className="card" style={{marginBottom:12,padding:14,borderColor:'rgba(251,191,36,.35)'}}><b>Tab switch detected.</b><span className="muted"> Your return was recorded for the host.</span></div>}
       <Confetti fire={burst} />
       <Confetti fire={finale} big />
 

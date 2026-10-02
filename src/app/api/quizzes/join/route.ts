@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 import { createSupabaseAdmin } from '@/lib/supabase-server';
 import { isValidRoomCode, normalizeRoomCode } from '@/lib/quiz-validation';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +12,10 @@ export async function POST(req: Request) {
         { error: 'Please log in or sign up before joining a quiz.' },
         { status: 401 }
       );
+    }
+
+    if (!(await enforceRateLimit('join', user.id, 60, 8))) {
+      return NextResponse.json({ error: 'Too many join attempts. Please wait a minute.' }, { status: 429 });
     }
 
     const body = await req.json();
@@ -25,7 +30,7 @@ export async function POST(req: Request) {
 
     const { data: quiz, error: quizErr } = await admin
       .from('quizzes')
-      .select('id, title, status, room_code')
+      .select('id, title, status, room_code, max_players')
       .eq('room_code', normalizedCode)
       .maybeSingle();
 
@@ -35,6 +40,12 @@ export async function POST(req: Request) {
 
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found. Please check the code.' }, { status: 404 });
+    }
+
+    const { count } = await admin.from('participants').select('id', { count: 'exact', head: true }).eq('quiz_id', quiz.id);
+    const { data: existing } = await admin.from('participants').select('id').eq('quiz_id', quiz.id).eq('user_id', user.id).maybeSingle();
+    if (!existing && quiz.max_players && (count ?? 0) >= quiz.max_players) {
+      return NextResponse.json({ error: 'This quiz is full.' }, { status: 409 });
     }
 
     const { data: participant, error: partErr } = await admin

@@ -23,7 +23,7 @@ export function Navbar({ signedIn, isAdmin, appName }: { signedIn: boolean; isAd
         <nav className="row" style={{ gap: 6 }}>
           {signedIn ? (
             <>
-              <Link className={'navlink ' + (path === '/join' ? 'active' : '')} href="/join">Join a quiz</Link>
+              <Link className={'navlink ' + (path === '/lobbies' ? 'active' : '')} href="/lobbies">Lobbies</Link><Link className={'navlink ' + (path === '/join' ? 'active' : '')} href="/join">Join</Link><Link className={'navlink ' + (path === '/dashboard' ? 'active' : '')} href="/dashboard">Dashboard</Link>
               {isAdmin && <Link className={'navlink ' + (path.startsWith('/admin') ? 'active' : '')} href="/admin">Admin</Link>}
               <LogoutButton />
             </>

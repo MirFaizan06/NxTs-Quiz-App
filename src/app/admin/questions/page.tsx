@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Sparkles, Trash2, Upload, Download } from 'lucide-react';
 import { ActionDialog } from '@/components/ActionDialog';
 
 type Q = { id: string; question_text: string; question_type: string; options: string[]; correct_answer: unknown; difficulty: string; points: number; time_limit: number; topic_id: string | null; topics: { name: string } | null };
@@ -24,6 +24,7 @@ export default function Questions() {
   const [mcorrect, setMcorrect] = useState('');
   const [questionToDelete, setQuestionToDelete] = useState<Q | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [csvBusy, setCsvBusy] = useState(false);
 
   async function load() {
     const [questionsResponse, topicsResponse] = await Promise.all([
@@ -127,6 +128,10 @@ export default function Questions() {
       </div>
 
       <AnimatePresence>{msg && <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="muted" style={{ marginTop: 16 }}>{msg}</motion.p>}</AnimatePresence>
+
+      <motion.div className="card" style={{ marginTop: 16 }} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="row between wrap"><div><h2 className="h2">CSV question bank</h2><p className="muted" style={{marginTop:6}}>Import or export the complete bank. Columns: question_text, question_type, options, correct_answer, explanation, difficulty, points, time_limit, topic_name.</p></div><div className="row wrap"><button className="btn ghost sm" onClick={()=>window.location.assign('/api/admin/questions/csv')}><Download size={14}/> Export CSV</button><label className="btn sm" style={{cursor:'pointer'}}><Upload size={14}/> {csvBusy?'Importing…':'Import CSV'}<input type="file" accept=".csv,text/csv" hidden disabled={csvBusy} onChange={async e=>{const file=e.target.files?.[0];if(!file)return;setCsvBusy(true);const fd=new FormData();fd.append('file',file);const r=await fetch('/api/admin/questions/csv',{method:'POST',body:fd});const j=await r.json();setMsg(r.ok?`Imported ${j.imported} questions.`:(j.error||'Import failed'));if(r.ok)await load();setCsvBusy(false);e.currentTarget.value='';}} /></label></div></div>
+      </motion.div>
 
       <motion.div className="card" style={{ marginTop: 16 }} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <h2 className="h2">All questions ({qs.length})</h2>

@@ -112,6 +112,7 @@ export default async function Home() {
         <div className="container row between wrap">
           <span>{appName} · Next.js, Supabase and Groq</span>
           <span>Made for people who teach with code.</span>
+          <span>A product of Tech Bytes Design.</span>
         </div>
       </footer>
     </>
