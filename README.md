@@ -4,7 +4,7 @@ Live quizzes across science, mathematics, geography, general knowledge, programm
 
 It started as a weekend answer to a simple annoyance: the popular quiz tools are great for trivia and awkward for code. Snippets get mangled, there is no easy way to generate a question set about, say, C++ constructors, and the good features sit behind a subscription. NxT Quiz runs on free tiers and stays out of the way.
 
-![stack](https://img.shields.io/badge/Next.js-16-black) ![stack](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Realtime-3ecf8e) ![stack](https://img.shields.io/badge/Groq-Llama%203.3-f55036) ![stack](https://img.shields.io/badge/TypeScript-strict-3178c6)
+![stack](https://img.shields.io/badge/Next.js-16-black) ![stack](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Realtime-3ecf8e) ![stack](https://img.shields.io/badge/Groq-GPT--OSS--20B-f55036) ![stack](https://img.shields.io/badge/TypeScript-strict-3178c6)
 
 ## What a round looks like
 
